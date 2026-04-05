@@ -540,7 +540,7 @@ def load_sample_file(sample_type: str) -> tuple:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         filename = "sample_CEMENT_companies_yearly.xlsx" if "Cement" in sample_type else "sample_PHARMA_companies_yearly.xlsx"
         filepath = os.path.join(script_dir, filename)
-        df_raw = pd.read_excel(filepath, sheet_name=0, dtype=str)
+        df_raw = pd.read_excel(filepath, sheet_name=0, dtype=object)
         df_raw.columns = [str(x).strip() for x in df_raw.columns]
         df = df_raw.copy()
         for col_idx in range(2, len(df.columns)):
@@ -691,7 +691,7 @@ def reset_analysis():
 
 def _load_dataframe_from_excel(source, name: str):
     """Read an Excel file from either a path string or an UploadedFile object."""
-    df_str = pd.read_excel(source, sheet_name=0, dtype=str)
+    df_str = pd.read_excel(source, sheet_name=0, dtype=object)
     df_str.columns = [str(c).strip() for c in df_str.columns]
     df = df_str.copy()
     for i in range(2, len(df.columns)):
