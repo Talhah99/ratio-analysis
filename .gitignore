@@ -1,0 +1,33 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets and environment variables
+.env
+.streamlit/secrets.toml
+
+# Byte-compiled
+*.pyc
+
+# Distribution
+dist/
+build/
+*.egg-info/
