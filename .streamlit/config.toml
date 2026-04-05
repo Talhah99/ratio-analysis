@@ -1,0 +1,11 @@
+[theme]
+primaryColor = "#6366F1"
+# base = "light" # Optional: set this if you want to strictly enforce light or dark mode
+
+[server]
+maxUploadSize = 50
+# enableCORS = false # Streamlit Cloud manages CORS natively. Leaving this false can cause issues.
+# enableXsrfProtection = true # Handled by Streamlit Cloud natively
+
+[browser]
+gatherUsageStats = false
