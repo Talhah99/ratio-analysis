@@ -158,7 +158,7 @@ st.markdown("""<style>
 /* ── Base ─────────────────────────────────────── */
 html, body, [class*="css"] { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }
 .main .block-container { padding-top: 0 !important; padding-bottom: 3rem; max-width: 1480px; }
-#MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; }
+#MainMenu, footer { visibility: hidden; }
 
 /* ── Header banner ────────────────────────────── */
 .app-header {
@@ -1188,40 +1188,38 @@ with tab3:
             ratio_names_all = []
 
         if ratio_names_all:
-            # ── Inline Analysis Controls ─────────────────────────────────
+            # ── Sidebar Analysis Controls ─────────────────────────────────
             all_companies = engine.companies
-            st.markdown('<div class="section-title">🎛️ Analysis Controls</div>', unsafe_allow_html=True)
-
-            _ctrl1, _ctrl2, _ctrl3 = st.columns([1.2, 1.5, 1.3])
-            with _ctrl1:
+            with st.sidebar:
+                st.markdown('<div class="sidebar-section-label" style="font-size:.85rem;color:white!important;margin-top:1rem;">🎛️ ANALYSIS CONTROLS</div>', unsafe_allow_html=True)
+                st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+                
                 _cat_names = list(RATIO_CATEGORIES.keys())
                 _prev_cat = st.session_state.get('sb_cat', _cat_names[0])
                 _cat_idx = _cat_names.index(_prev_cat) if _prev_cat in _cat_names else 0
                 selected_cat = st.selectbox('📁 Category', _cat_names, index=_cat_idx, key='sb_cat')
-            with _ctrl2:
+                
                 cat_ratios = [r for r in RATIO_CATEGORIES.get(selected_cat, []) if r in matrices]
                 if not cat_ratios:
                     cat_ratios = sorted(ratio_names_all)
                 _prev_ratio = st.session_state.get('sb_ratio', cat_ratios[0])
                 _ratio_idx = cat_ratios.index(_prev_ratio) if _prev_ratio in cat_ratios else 0
                 selected_ratio = st.selectbox('📊 Ratio', cat_ratios, index=_ratio_idx, key='sb_ratio')
-            with _ctrl3:
-                chart_style = st.radio('Chart Style', ['📈 Line', '📊 Bar', '🏔️ Area'],
-                                       key='sb_chart', horizontal=True)
-
-            _ctrl4, _ctrl5 = st.columns([3, 1])
-            with _ctrl4:
+                
+                chart_style = st.radio('Chart Style', ['📈 Line', '📊 Bar', '🏔️ Area'], key='sb_chart')
+                
+                st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+                
                 _prev_cos = st.session_state.get('sb_companies',
                     all_companies[:6] if len(all_companies) > 6 else all_companies)
                 _prev_cos = [c for c in (_prev_cos or []) if c in all_companies] or (
                     all_companies[:6] if len(all_companies) > 6 else all_companies)
                 selected_companies = st.multiselect('🏢 Companies', all_companies,
                     default=_prev_cos, key='sb_companies')
-            with _ctrl5:
+                
                 show_mean = st.checkbox('Peer Mean', value=True, key='sb_mean')
                 show_median = st.checkbox('Peer Median', value=False, key='sb_median')
-
-            st.markdown('---')
+                st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
             # Validate selections
             if selected_ratio not in matrices:
@@ -1422,7 +1420,8 @@ with tab3:
                         st.download_button(
                             '📥 Download Dashboard',
                             data=html_content, file_name=filename,
-                            mime='text/html', use_container_width=True
+                            mime='text/html', use_container_width=True,
+                            key=f"dl_dash_{dashboard_company.replace(' ','_')}"
                         )
                     except Exception as e:
                         st.error(f'Dashboard error: {_user_friendly_error(e)}')
