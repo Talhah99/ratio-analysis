@@ -1277,68 +1277,73 @@ with tab3:
                                 if pd.isna(val): return '—'
                                 return f'{val:.2%}' if is_percentage else f'{val:,.2f}'
 
-                            tbl_col, stat_col = st.columns([3, 1])
+                            st.markdown('**📐 Statistics**')
+                            stat_labels = ['Mean', 'Median', 'Std Dev']
+                            company_only = df_display.drop(
+                                index=[i for i in df_display.index if i in stat_labels],
+                                errors='ignore'
+                            )
+                            latest_col  = company_only.columns[-1]
+                            latest_vals = company_only[latest_col].dropna()
+                            all_vals    = company_only.values.flatten()
+                            all_vals    = all_vals[~pd.isna(all_vals)]
 
-                            with tbl_col:
-                                st.markdown('**📋 Data Table**')
-                                valid_data = df_display.values.flatten()
-                                valid_data = valid_data[~pd.isna(valid_data)]
-                                if len(valid_data) > 0:
-                                    q1v, q3v = pd.Series(valid_data).quantile([0.25, 0.75])
-                                    iqr  = q3v - q1v
-                                    vmin = max(valid_data.min(), q1v - 1.5 * iqr)
-                                    vmax = min(valid_data.max(), q3v + 1.5 * iqr)
-                                    # Ratios where LOWER values are better — invert colormap
-                                    _inverted_ratios = {
-                                        'Beneish M-Score', 'Sloan Accrual Ratio',
-                                        'Ohlson Bankruptcy Prob',
-                                        'Debt to Equity', 'Net Debt to Equity',
-                                        'Debt to Assets', 'Debt to Capital',
-                                        'Net Debt to EBITDA', 'Financial Leverage',
-                                        'Interest Expense Ratio',
-                                        'P/E Ratio', 'PEG Ratio',
-                                        'Price to Book (P/B)', 'Price to Sales',
-                                        'EV / EBITDA', 'EV / Revenue',
-                                        'Days Sales Outstanding (DSO)',
-                                        'Days Inventory (DIO)',
-                                        'Cash Conversion Cycle',
-                                        'Dividend Payout',
-                                    }
-                                    _cmap = ('RdYlGn_r' if selected_ratio in _inverted_ratios
-                                             else 'RdYlGn')
-                                    st.dataframe(
-                                        df_display.style
-                                            .background_gradient(cmap=_cmap, vmin=vmin, vmax=vmax)
-                                            .format(fmt),
-                                        use_container_width=True,
-                                        height=min(420, 60 + len(companies_to_show) * 40)
-                                    )
-                                else:
-                                    st.dataframe(df_display.map(fmt), use_container_width=True)
+                            def fv(v):
+                                return f'{v:.2%}' if is_percentage else f'{v:,.2f}'
 
-                            with stat_col:
-                                st.markdown('**📐 Statistics**')
-                                stat_labels = ['Mean', 'Median', 'Std Dev']
-                                company_only = df_display.drop(
-                                    index=[i for i in df_display.index if i in stat_labels],
-                                    errors='ignore'
-                                )
-                                latest_col  = company_only.columns[-1]
-                                latest_vals = company_only[latest_col].dropna()
-                                all_vals    = company_only.values.flatten()
-                                all_vals    = all_vals[~pd.isna(all_vals)]
-
-                                def fv(v):
-                                    return f'{v:.2%}' if is_percentage else f'{v:,.2f}'
-
+                            c1, c2, c3, c4 = st.columns(4)
+                            with c1:
                                 if not latest_vals.empty:
                                     top = latest_vals.idxmax()
                                     st.metric(f'🏆 Best ({latest_col})', top, fv(latest_vals.max()))
+                            with c2:
                                 if len(all_vals) > 0:
                                     st.metric('⌀ Average', fv(all_vals.mean()))
+                            with c3:
                                 if len(all_vals) > 1:
                                     st.metric('σ Std Dev',  fv(all_vals.std()))
+                            with c4:
+                                if len(all_vals) > 1:
                                     st.metric('↕ Range',    fv(all_vals.max() - all_vals.min()))
+                            
+                            st.markdown('<br>', unsafe_allow_html=True)
+                            st.markdown('**📋 Data Table**')
+                            valid_data = df_display.values.flatten()
+                            valid_data = valid_data[~pd.isna(valid_data)]
+                            if len(valid_data) > 0:
+                                q1v, q3v = pd.Series(valid_data).quantile([0.25, 0.75])
+                                iqr  = q3v - q1v
+                                vmin = max(valid_data.min(), q1v - 1.5 * iqr)
+                                vmax = min(valid_data.max(), q3v + 1.5 * iqr)
+                                # Ratios where LOWER values are better — invert colormap
+                                _inverted_ratios = {
+                                    'Beneish M-Score', 'Sloan Accrual Ratio',
+                                    'Ohlson Bankruptcy Prob',
+                                    'Debt to Equity', 'Net Debt to Equity',
+                                    'Debt to Assets', 'Debt to Capital',
+                                    'Net Debt to EBITDA', 'Financial Leverage',
+                                    'Interest Expense Ratio',
+                                    'P/E Ratio', 'PEG Ratio',
+                                    'Price to Book (P/B)', 'Price to Sales',
+                                    'EV / EBITDA', 'EV / Revenue',
+                                    'Days Sales Outstanding (DSO)',
+                                    'Days Inventory (DIO)',
+                                    'Cash Conversion Cycle',
+                                    'Dividend Payout',
+                                }
+                                _cmap = ('RdYlGn_r' if selected_ratio in _inverted_ratios
+                                         else 'RdYlGn')
+                                st.dataframe(
+                                    df_display.style
+                                        .background_gradient(cmap=_cmap, vmin=vmin, vmax=vmax)
+                                        .format(fmt),
+                                    use_container_width=True,
+                                    height=min(420, 60 + len(companies_to_show) * 40)
+                                )
+                            else:
+                                st.dataframe(df_display.map(fmt), use_container_width=True)
+                            
+                            st.markdown('<br>', unsafe_allow_html=True)
 
                             st.markdown('**📈 Trend Chart**')
                             chart_data = df_display.T.reset_index().melt(
@@ -1402,6 +1407,7 @@ with tab3:
                 if st.button("⚙️ Generate Excel Report", use_container_width=True, key="btn_gen_excel"):
                     try:
                         with st.spinner("⏳ Rendering Excel Data..."):
+                            time.sleep(1.0)
                             buffer = io.BytesIO()
                             engine.export_excel(buffer)
                             st.session_state.excel_payload = buffer.getvalue()
@@ -1434,6 +1440,7 @@ with tab3:
                     if st.button(f"⚙️ Generate Dashboard", use_container_width=True, key=f"btn_gen_dash_{dashboard_company.replace(' ','_')}"):
                         try:
                             with st.spinner(f"⏳ Rendering Dashboard for {dashboard_company}..."):
+                                time.sleep(1.0)
                                 dash_gen = DashboardGenerator(engine)
                                 html_content = dash_gen.generate_html(dashboard_company)
                                 st.session_state.dash_payloads[dashboard_company] = html_content
