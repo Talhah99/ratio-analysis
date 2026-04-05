@@ -688,6 +688,8 @@ def reset_analysis():
     st.session_state.validation_result = None
     st.session_state.data_quality = None
     st.session_state.analysis_complete = False
+    st.session_state.excel_payload = None
+    st.session_state.dash_payloads = {}
 
 def _load_dataframe_from_excel(source, name: str):
     """Read an Excel file from either a path string or an UploadedFile object."""
@@ -1146,6 +1148,8 @@ with tab2:
                         )
                         engine.run_calculation()
                         st.session_state.engine = engine
+                        st.session_state.excel_payload = None
+                        st.session_state.dash_payloads = {}
                         st.session_state.analysis_complete = True
                         st.session_state.workflow_step = 3
                         st.session_state.data_quality = engine.get_data_quality_report()
@@ -1391,18 +1395,28 @@ with tab3:
                 st.markdown('<div class="export-card"><div class="export-card-title">📊 Excel Workbook</div>'
                     '<div class="export-card-body">All ratios by category across separate sheets, '
                     'with peer mean and median rows.</div>', unsafe_allow_html=True)
-                try:
-                    buffer = io.BytesIO()
-                    engine.export_excel(buffer)
+                
+                if 'excel_payload' not in st.session_state:
+                    st.session_state.excel_payload = None
+                
+                if st.button("⚙️ Generate Excel Report", use_container_width=True, key="btn_gen_excel"):
+                    try:
+                        with st.spinner("⏳ Rendering Excel Data..."):
+                            buffer = io.BytesIO()
+                            engine.export_excel(buffer)
+                            st.session_state.excel_payload = buffer.getvalue()
+                    except Exception as e:
+                        st.error(f'Export error: {_user_friendly_error(e)}')
+
+                if st.session_state.excel_payload:
+                    st.success("✅ Excel Workbook Ready!")
                     filename = f"RatioAnalysis_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.xlsx"
                     st.download_button(
                         '📥 Download Excel Report',
-                        data=buffer.getvalue(), file_name=filename,
+                        data=st.session_state.excel_payload, file_name=filename,
                         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         use_container_width=True
                     )
-                except Exception as e:
-                    st.error(f'Export error: {_user_friendly_error(e)}')
                 st.markdown('</div>', unsafe_allow_html=True)
 
             with exp2:
@@ -1413,18 +1427,28 @@ with tab3:
                     dashboard_company = st.selectbox(
                         'Company', engine.companies, label_visibility='collapsed'
                     )
-                    try:
-                        dash_gen = DashboardGenerator(engine)
-                        html_content = dash_gen.generate_html(dashboard_company)
+                    
+                    if 'dash_payloads' not in st.session_state:
+                        st.session_state.dash_payloads = {}
+
+                    if st.button(f"⚙️ Generate Dashboard", use_container_width=True, key=f"btn_gen_dash_{dashboard_company.replace(' ','_')}"):
+                        try:
+                            with st.spinner(f"⏳ Rendering Dashboard for {dashboard_company}..."):
+                                dash_gen = DashboardGenerator(engine)
+                                html_content = dash_gen.generate_html(dashboard_company)
+                                st.session_state.dash_payloads[dashboard_company] = html_content
+                        except Exception as e:
+                            st.error(f'Dashboard error: {_user_friendly_error(e)}')
+
+                    if dashboard_company in st.session_state.dash_payloads:
+                        st.success(f"✅ Dashboard for {dashboard_company} Ready!")
                         filename = f"Dashboard_{dashboard_company.replace(' ','_')}_{pd.Timestamp.now().strftime('%Y%m%d')}.html"
                         st.download_button(
                             '📥 Download Dashboard',
-                            data=html_content, file_name=filename,
+                            data=st.session_state.dash_payloads[dashboard_company], file_name=filename,
                             mime='text/html', use_container_width=True,
                             key=f"dl_dash_{dashboard_company.replace(' ','_')}"
                         )
-                    except Exception as e:
-                        st.error(f'Dashboard error: {_user_friendly_error(e)}')
                 else:
                     st.warning('⚠️ Dashboard module unavailable (Dashboard.py not found).')
                 st.markdown('</div>', unsafe_allow_html=True)
